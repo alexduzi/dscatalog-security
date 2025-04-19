@@ -12,10 +12,10 @@ public class UserDTO implements Serializable {
 
     private Long id;
 
-    @NotBlank(message = "Campo requerido")
+    @NotBlank(message = "Campo obrigatório")
     private String firstName;
 
-    @NotBlank(message = "Campo requerido")
+    @NotBlank(message = "Campo obrigatório")
     private String lastName;
 
     @Email(message = "Email é de um formato inválido")
