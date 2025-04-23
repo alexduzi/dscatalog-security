@@ -3,6 +3,7 @@ package com.devsuperior.dscatalog.config;
 import com.devsuperior.dscatalog.config.customgrant.CustomPasswordAuthenticationConverter;
 import com.devsuperior.dscatalog.config.customgrant.CustomPasswordAuthenticationProvider;
 import com.devsuperior.dscatalog.config.customgrant.CustomUserAuthorities;
+import com.devsuperior.dscatalog.services.UserDetailsServiceSecurity;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
@@ -14,7 +15,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -59,7 +59,7 @@ public class AuthorizationServerConfig {
     private Integer jwtDurationSeconds;
 
     @Autowired
-    private UserDetailsService userDetailsService;
+    private UserDetailsServiceSecurity userDetailsService;
 
     @Bean
     @Order(2)
