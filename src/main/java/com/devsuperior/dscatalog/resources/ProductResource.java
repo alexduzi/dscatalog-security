@@ -1,10 +1,9 @@
 package com.devsuperior.dscatalog.resources;
 
-import com.devsuperior.dscatalog.DscatalogApplication;
 import com.devsuperior.dscatalog.dto.ProductDTO;
+import com.devsuperior.dscatalog.projections.ProductProjection;
 import com.devsuperior.dscatalog.services.ProductService;
 import jakarta.validation.Valid;
-import org.springframework.boot.SpringApplication;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.time.Instant;
 
 @RestController
 @RequestMapping(value = "/products")
@@ -23,6 +21,14 @@ public class ProductResource {
 
     public ProductResource(ProductService service) {
         this.service = service;
+    }
+
+    @GetMapping(value = "/search")
+    public ResponseEntity<Page<ProductProjection>> search(@RequestParam(value = "name", defaultValue = "") String name,
+                                                          @RequestParam(value = "categoryId", defaultValue = "0") String categoryId,
+                                                          Pageable pageable) {
+        Page<ProductProjection> list = service.search(name, categoryId, pageable);
+        return ResponseEntity.ok().body(list);
     }
 
     @GetMapping
