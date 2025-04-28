@@ -9,6 +9,7 @@ import com.devsuperior.dscatalog.repositories.CategoryRepository;
 import com.devsuperior.dscatalog.repositories.ProductRepository;
 import com.devsuperior.dscatalog.services.exceptions.DatabaseException;
 import com.devsuperior.dscatalog.services.exceptions.ResourceNotFoundException;
+import com.devsuperior.dscatalog.util.Utils;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -37,16 +38,20 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public Page<ProductDTO> search(String name, String categoryId, Pageable pageable) {
-        List<Long> categoryIds =
-                !"0".equals(categoryId) ?
-                        Arrays.stream(categoryId.split(",")).mapToLong(Long::parseLong).boxed().collect(Collectors.toList())
-                        : List.of();
+        List<Long> categoryIds = !"0".equals(categoryId) ?
+                Arrays.stream(categoryId.split(",")).mapToLong(Long::parseLong).boxed().collect(Collectors.toList())
+                :
+                List.of();
 
         Page<ProductProjection> page = productRepository.searchProducts(name, categoryIds, pageable);
 
         List<Long> producIds = page.stream().mapToLong(ProductProjection::getId).boxed().toList();
 
-        List<ProductDTO> dtos = productRepository.searchProductsWithCategories(producIds).stream().map(p -> new ProductDTO(p, p.getCategories())).toList();
+        List<Product> entities = productRepository.searchProductsWithCategories(producIds);
+
+        entities = Utils.replace(page.getContent(), entities);
+
+        List<ProductDTO> dtos = entities.stream().map(p -> new ProductDTO(p, p.getCategories())).toList();
 
         return new PageImpl<>(dtos, page.getPageable(), page.getTotalElements());
     }
