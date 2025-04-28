@@ -36,6 +36,7 @@ public class ProductService {
         this.categoryRepository = categoryRepository;
     }
 
+    @SuppressWarnings("unchecked")
     @Transactional(readOnly = true)
     public Page<ProductDTO> search(String name, String categoryId, Pageable pageable) {
         List<Long> categoryIds = !"0".equals(categoryId) ?
@@ -49,7 +50,7 @@ public class ProductService {
 
         List<Product> entities = productRepository.searchProductsWithCategories(producIds);
 
-        entities = Utils.replace(page.getContent(), entities);
+        entities = (List<Product>) Utils.replace(page.getContent(), entities);
 
         List<ProductDTO> dtos = entities.stream().map(p -> new ProductDTO(p, p.getCategories())).toList();
 

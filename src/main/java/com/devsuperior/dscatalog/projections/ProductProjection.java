@@ -1,6 +1,7 @@
 package com.devsuperior.dscatalog.projections;
 
-public interface ProductProjection {
-    Long getId();
+import com.devsuperior.dscatalog.entities.Product;
+
+public interface ProductProjection extends IdProjection<Long> {
     String getName();
 }
