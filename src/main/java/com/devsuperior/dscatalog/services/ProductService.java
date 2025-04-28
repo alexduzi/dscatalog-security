@@ -12,6 +12,7 @@ import com.devsuperior.dscatalog.services.exceptions.ResourceNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -25,34 +26,40 @@ import java.util.stream.Collectors;
 @Service
 public class ProductService {
 
-    private final ProductRepository repository;
+    private final ProductRepository productRepository;
 
     private final CategoryRepository categoryRepository;
 
-    public ProductService(ProductRepository repository, CategoryRepository categoryRepository) {
-        this.repository = repository;
+    public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository) {
+        this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductProjection> search(String name, String categoryId, Pageable pageable) {
+    public Page<ProductDTO> search(String name, String categoryId, Pageable pageable) {
         List<Long> categoryIds =
                 !"0".equals(categoryId) ?
                         Arrays.stream(categoryId.split(",")).mapToLong(Long::parseLong).boxed().collect(Collectors.toList())
                         : List.of();
 
-        return repository.searchProducts(name, categoryIds, pageable);
+        Page<ProductProjection> page = productRepository.searchProducts(name, categoryIds, pageable);
+
+        List<Long> producIds = page.stream().mapToLong(ProductProjection::getId).boxed().toList();
+
+        List<ProductDTO> dtos = productRepository.searchProductsWithCategories(producIds).stream().map(p -> new ProductDTO(p, p.getCategories())).toList();
+
+        return new PageImpl<>(dtos, page.getPageable(), page.getTotalElements());
     }
 
     @Transactional(readOnly = true)
     public Page<ProductDTO> findAllPaged(Pageable pageable) {
-        Page<Product> list = repository.findAll(pageable);
+        Page<Product> list = productRepository.findAll(pageable);
         return list.map(ProductDTO::new);
     }
 
     @Transactional(readOnly = true)
     public ProductDTO findById(Long id) {
-        Optional<Product> obj = repository.findById(id);
+        Optional<Product> obj = productRepository.findById(id);
         Product entity = obj.orElseThrow(() -> new ResourceNotFoundException("Entity not found"));
         return new ProductDTO(entity, entity.getCategories());
     }
@@ -61,16 +68,16 @@ public class ProductService {
     public ProductDTO insert(ProductDTO dto) {
         Product entity = new Product();
         copyDtoToEntity(dto, entity);
-        entity = repository.save(entity);
+        entity = productRepository.save(entity);
         return new ProductDTO(entity);
     }
 
     @Transactional
     public ProductDTO update(Long id, ProductDTO dto) {
         try {
-            Product entity = repository.getReferenceById(id);
+            Product entity = productRepository.getReferenceById(id);
             copyDtoToEntity(dto, entity);
-            entity = repository.save(entity);
+            entity = productRepository.save(entity);
             return new ProductDTO(entity);
         } catch (EntityNotFoundException e) {
             throw new ResourceNotFoundException("Id not found " + id);
@@ -79,11 +86,11 @@ public class ProductService {
 
     @Transactional(propagation = Propagation.SUPPORTS)
     public void delete(Long id) {
-        if (!repository.existsById(id)) {
+        if (!productRepository.existsById(id)) {
             throw new ResourceNotFoundException("Recurso não encontrado");
         }
         try {
-            repository.deleteById(id);
+            productRepository.deleteById(id);
         } catch (DataIntegrityViolationException e) {
             throw new DatabaseException("Falha de integridade referencial");
         }
