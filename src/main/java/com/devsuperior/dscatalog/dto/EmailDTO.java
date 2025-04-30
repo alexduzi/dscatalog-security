@@ -3,7 +3,9 @@ package com.devsuperior.dscatalog.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-public class EmailDTO {
+import java.io.Serializable;
+
+public class EmailDTO implements Serializable {
 
     @NotBlank(message = "Campo obrigatório")
     @Email(message = "Email inválido")
