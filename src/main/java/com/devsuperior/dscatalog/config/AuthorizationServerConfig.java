@@ -8,13 +8,13 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -58,14 +58,18 @@ public class AuthorizationServerConfig {
     @Value("${security.jwt.duration}")
     private Integer jwtDurationSeconds;
 
-    @Autowired
-    private UserDetailsServiceSecurity userDetailsService;
+    private final UserDetailsServiceSecurity userDetailsService;
+
+    public AuthorizationServerConfig(UserDetailsServiceSecurity userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
 
     @Bean
     @Order(2)
     public SecurityFilterChain asSecurityFilterChain(HttpSecurity http) throws Exception {
 
-        http.securityMatcher("/**").with(OAuth2AuthorizationServerConfigurer.authorizationServer(), Customizer.withDefaults());
+        http.securityMatcher("/oauth2/**", "/.well-known/**", "/connect/**")
+                .with(OAuth2AuthorizationServerConfigurer.authorizationServer(), Customizer.withDefaults());
 
         // @formatter:off
         http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
@@ -146,7 +150,7 @@ public class AuthorizationServerConfig {
         return context -> {
             OAuth2ClientAuthenticationToken principal = context.getPrincipal();
             CustomUserAuthorities user = (CustomUserAuthorities) principal.getDetails();
-            List<String> authorities = user.getAuthorities().stream().map(x -> x.getAuthority()).toList();
+            List<String> authorities = user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
             if (context.getTokenType().getValue().equals("access_token")) {
                 // @formatter:off
                 context.getClaims()
