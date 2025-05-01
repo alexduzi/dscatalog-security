@@ -31,19 +31,26 @@ public class UserService {
 
     private final BCryptPasswordEncoder bcryptPasswordEncoder;
 
-    private final UserRepository userRepository;
+    private final AuthService authService;
 
-    public UserService(UserRepository repository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, UserRepository userRepository) {
+    public UserService(UserRepository repository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, AuthService authService) {
         this.repository = repository;
         this.roleRepository = roleRepository;
         this.bcryptPasswordEncoder = (BCryptPasswordEncoder) passwordEncoder;
-        this.userRepository = userRepository;
+        this.authService = authService;
     }
 
     @Transactional(readOnly = true)
     public Page<UserDTO> findAllPaged(Pageable pageable) {
         Page<User> list = repository.findAll(pageable);
         return list.map(UserDTO::new);
+    }
+
+    @Transactional(readOnly = true)
+    public UserDTO findMe() {
+        Optional<User> obj = authService.authenticated();
+        User entity = obj.orElseThrow(() -> new ResourceNotFoundException("Entity not found"));
+        return new UserDTO(entity);
     }
 
     @Transactional(readOnly = true)
